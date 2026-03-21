@@ -1,0 +1,28 @@
+# 🔹 Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 🔹 Virtual environment
+venv/
+.env/
+.venv/
+
+# 🔹 Environment variables
+.env
+.env.*
+
+# 🔹 Logs
+*.log
+
+# 🔹 SQLite / DB files (if used)
+*.db
+
+# 🔹 FAISS index files (important for your project)
+*.index
+*.faiss
+*.pkl
+# 🔹 Uploaded files / temp data
+uploads/
+data/
+tmp/

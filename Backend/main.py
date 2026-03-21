@@ -1,0 +1,93 @@
+from fastapi import FastAPI, UploadFile, File
+import shutil
+import os
+from services.parser import extract_text_from_pdf
+from services.chunker import chunk_text
+from services.embedder import get_embeddings , model
+from db.faiss_store import search , initialize ,add_embeddings
+from services.llm import generate_answer
+from services.audio import transcribe_audio
+from services.image import extract_text_from_image
+import numpy as np
+from pydantic import BaseModel
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+print(pytesseract.get_tesseract_version())
+app = FastAPI()
+
+UPLOAD_DIR = "data/uploads"
+@app.on_event("startup")
+def startup_event():
+    initialize()
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Step 1: Extract text
+    if file.filename.endswith(".mp3") or file.filename.endswith(".wav"):
+        extracted_text = transcribe_audio(file_path)
+    elif file.filename.endswith((".png", ".jpg", ".jpeg")):
+        extracted_text = extract_text_from_image(file_path)
+    else:
+        extracted_text = extract_text_from_pdf(file_path)
+
+    # Step 2: Chunk text
+    chunks = chunk_text(extracted_text)
+
+    # Step 3: Generate embeddings
+    embeddings = get_embeddings(chunks)
+
+    # Step 4: Store in FAISS
+    add_embeddings(embeddings, chunks, file.filename)
+
+    return {
+     "filename": file.filename,
+     "chunks": len(chunks),
+     "message": "Embeddings created and stored"
+}
+
+class QueryRequest(BaseModel):
+    query: str
+
+
+@app.post("/query")
+def query_rag(request: QueryRequest):
+    query = request.query
+
+    # Step 1: Convert query → embedding
+    query_embedding = model.encode([query])
+
+    # Step 2: Search FAISS
+    results = search(query_embedding, top_k=3)
+    results = sorted(
+        results,
+        key=lambda r: keyword_match_score(query, r["text"]),
+        reverse=True
+    )
+    if not results:
+        return {
+            "answer": "No relevant information found.",
+            "sources": []
+       }
+    context = "\n\n".join([
+        f"Chunk {i+1}:\n{r['text']}"
+        for i, r in enumerate(results)
+    ])
+    # Step 4: Generate answer
+    answer = generate_answer(query, context)
+
+    return {
+        "query": query,
+        "answer": answer,
+        "confidence": float(results[0]["score"]),
+        "sources": results
+    }
+def keyword_match_score(query, text):
+    query_words = set(query.lower().split())
+    text_words = set(text.lower().split())
+    return len(query_words.intersection(text_words))

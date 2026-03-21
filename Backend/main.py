@@ -10,12 +10,16 @@ from services.audio import transcribe_audio
 from services.image import extract_text_from_image
 import numpy as np
 from pydantic import BaseModel
-import pytesseract
+from fastapi.middleware.cors import CORSMiddleware
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-print(pytesseract.get_tesseract_version())
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # for dev
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 UPLOAD_DIR = "data/uploads"
 @app.on_event("startup")
 def startup_event():
@@ -80,12 +84,20 @@ def query_rag(request: QueryRequest):
     ])
     # Step 4: Generate answer
     answer = generate_answer(query, context)
-
+    score = float(results[0]["score"])
+    confidence = max(0, min(1, score))  # clamp between 0–1
     return {
         "query": query,
         "answer": answer,
-        "confidence": float(results[0]["score"]),
-        "sources": results
+        "confidence": confidence,
+        "sources": [
+            {
+                "fileName": r.get("file", "Unknown"),
+                "snippet": r["text"][:200],
+                "score": float(r["score"])
+            }
+            for r in results
+        ]
     }
 def keyword_match_score(query, text):
     query_words = set(query.lower().split())

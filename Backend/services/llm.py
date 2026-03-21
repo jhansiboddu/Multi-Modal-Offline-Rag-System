@@ -7,6 +7,11 @@ def generate_answer(query, context):
     You are a strict assistant.
     Use ONLY the information from the provided chunks.
     Rules:
+    IMPORTANT:
+    - Use bullet points where possible
+    - Use headings if needed
+    - Keep it clean and structured
+    - Do NOT dump raw text
     - Do NOT add external knowledge
     - Do NOT guess
     - Do NOT combine unrelated steps

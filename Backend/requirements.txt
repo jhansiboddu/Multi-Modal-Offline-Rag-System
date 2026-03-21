@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+python-multipart
+
+pymupdf
+
+sentence-transformers
+faiss-cpu
+
+numpy
+
+requests
+
+pytesseract
+pillow
+
+openai-whisper

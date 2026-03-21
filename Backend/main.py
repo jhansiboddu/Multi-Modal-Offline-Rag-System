@@ -21,6 +21,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 UPLOAD_DIR = "data/uploads"
+@app.get("/files")
+async def get_files():
+    try:
+        # Check if directory exists
+        if not os.path.exists(UPLOAD_DIR):
+            return {"files": []}
+
+        # List only files (ignore folders)
+        files = [
+            f for f in os.listdir(UPLOAD_DIR)
+            if os.path.isfile(os.path.join(UPLOAD_DIR, f))
+        ]
+
+        return {"files": files}
+
+    except Exception as e:
+        return {"files": [], "error": str(e)}
+
 @app.on_event("startup")
 def startup_event():
     initialize()

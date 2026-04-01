@@ -21,6 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 UPLOAD_DIR = "data/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 @app.get("/files")
 async def get_files():
     try:
@@ -110,7 +111,7 @@ def query_rag(request: QueryRequest):
         "confidence": confidence,
         "sources": [
             {
-                "fileName": r.get("file", "Unknown"),
+                "fileName": r.get("source", "Unknown"),
                 "snippet": r["text"][:200],
                 "score": float(r["score"])
             }

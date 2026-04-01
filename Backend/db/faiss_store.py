@@ -68,10 +68,13 @@ def search(query_embedding, top_k=3):
 
     results = []
     for i, idx in enumerate(indices[0]):
+        distance = distances[0][i]
+        similarity = 1 / (1 + distance)
+
         results.append({
             "text": stored_data[idx]["text"],
             "source": stored_data[idx]["source"],
-            "score": float(distances[0][i])
+            "score": float(similarity)
         })
 
     return results

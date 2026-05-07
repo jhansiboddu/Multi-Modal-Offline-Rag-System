@@ -2,6 +2,7 @@ import faiss
 import numpy as np
 import pickle
 import os
+from rank_bm25 import BM25Okapi
 
 INDEX_FILE = "./faiss.index"
 DATA_FILE = "./chunks.pkl"
@@ -9,6 +10,29 @@ os.makedirs(os.path.dirname(INDEX_FILE), exist_ok=True)
 # Global variables (simple approach)
 index = None
 stored_chunks = []
+
+def initialize_keyword_search(chunks):
+    global bm25, documents
+
+    documents = [chunk.split() for chunk in chunks]
+    bm25 = BM25Okapi(documents)
+
+def search_keyword(query, top_k=3):
+    global bm25, documents
+
+    if bm25 is None:
+        return []
+
+    query_tokens = query.split()
+    scores = bm25.get_scores(query_tokens)
+
+    ranked = sorted(
+        list(enumerate(scores)),
+        key=lambda x: x[1],
+        reverse=True
+    )[:top_k]
+
+    return ranked
 
 def initialize():
     global index, stored_data

@@ -56,6 +56,7 @@ async def upload_file(file: UploadFile = File(...)):
         extracted_text = transcribe_audio(file_path)
     elif file.filename.endswith((".png", ".jpg", ".jpeg")):
         extracted_text = extract_text_from_image(file_path)
+        print("EXTRACTED TEXT:", extracted_text)
     else:
         extracted_text = extract_text_from_pdf(file_path)
 

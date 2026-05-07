@@ -33,6 +33,7 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 #     return response.json()["response"]
 
 def generate_answer(query, context):
+    # return "LLM not connected yet"
     prompt = f"""
 Answer ONLY using the provided chunks.
 
